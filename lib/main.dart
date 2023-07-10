@@ -187,8 +187,8 @@ class _HomePageState extends State<HomePage> {
       final collectionReference =
           FirebaseFirestore.instance.collection('items');
 
-    String randomKey = FirebaseFirestore.instance.collection('items').doc().id;
-
+      String randomKey =
+          FirebaseFirestore.instance.collection('items').doc().id;
 
       collectionReference.get().then((querySnapshot) {
         List<String> newItems = querySnapshot.docs
@@ -209,11 +209,29 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => MultiAuth()),
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Home'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _signOut,
+          ),
+        ],
       ),
       body: ListView.builder(
         controller: _scrollController,
