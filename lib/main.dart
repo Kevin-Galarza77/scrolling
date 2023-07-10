@@ -12,8 +12,16 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Verificar si hay un usuario autenticado
+  User? user = FirebaseAuth.instance.currentUser;
+  Widget initialPage = (user != null) ? HomePage() : MultiAuthPage();
+
   runApp(
-    const MultiAuth(),
+    MaterialApp(
+      title: 'Multi-Auth',
+      home: initialPage,
+    ),
   );
 }
 
@@ -143,7 +151,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<String> items = List.generate(20, (index) => 'Item ${index + 1}');
+  List<String> items = [];
   bool isLoading = false;
 
   ScrollController _scrollController = ScrollController();
@@ -151,6 +159,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _loadMoreItems();
     _scrollController.addListener(_scrollListener);
   }
 
@@ -175,33 +184,28 @@ class _HomePageState extends State<HomePage> {
         isLoading = true;
       });
 
-      // Obtén la referencia a la colección en Firebase Firestore
       final collectionReference =
           FirebaseFirestore.instance.collection('items');
 
-      // Realiza una consulta paginada para obtener los siguientes elementos
-      collectionReference
-          .orderBy('campo_orden', descending: false)
-          .startAfter([items.last])
-          .limit(10)
-          .get()
-          .then((querySnapshot) {
-            // Mapea los documentos de la consulta a objetos o datos relevantes para tu aplicación
-            List<String> newItems = querySnapshot.docs
-                .map((doc) => doc.data()['item'] as String)
-                .toList();
+    String randomKey = FirebaseFirestore.instance.collection('items').doc().id;
 
-            setState(() {
-              items.addAll(newItems);
-              isLoading = false;
-            });
-          })
-          .catchError((error) {
-            print('Error al cargar más elementos: $error');
-            setState(() {
-              isLoading = false;
-            });
-          });
+
+      collectionReference.get().then((querySnapshot) {
+        List<String> newItems = querySnapshot.docs
+            .map((doc) => doc.data()['name'] as String)
+            .toList();
+
+        setState(() {
+          items.addAll(newItems);
+          isLoading = false;
+        });
+      }).catchError((error) {
+        print(
+            'Error al cargar más elementos: $error'); // Agregar punto de depuración para ver el mensaje de error
+        setState(() {
+          isLoading = false;
+        });
+      });
     }
   }
 
